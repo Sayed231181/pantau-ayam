@@ -63,7 +63,7 @@ table.bh td.hd{background:#e3eff8;font-weight:700;color:#25405a}
 table.bh td.n{text-align:right}
 table.bh{min-width:0}
 .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-button.delu,button.dela,button.delt,button.delp{border:0;background:none;color:var(--warn);font-size:16px;padding:6px 8px;min-height:36px}
+button.delum,button.delu,button.dela,button.delt,button.delp{border:0;background:none;color:var(--warn);font-size:16px;padding:6px 8px;min-height:36px}
 .btnrow button:first-child{grid-column:1/-1}
 #rpv,#slv{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 24px}
 #rpv[hidden],#slv[hidden]{display:none}
@@ -185,8 +185,8 @@ function pushDiff(k,b,a){
   });
   if(Object.keys(up).length)fs.setDoc(ref,up,{merge:true}).catch(()=>setStatus('Gagal sinkron'));
 }
-function change(fn){
-  const k=key(),before=JSON.parse(JSON.stringify(load())),after=JSON.parse(JSON.stringify(before));
+function change(fn,kk){
+  const k=kk||key(),before=JSON.parse(JSON.stringify(kk?(mem[k]||localGet(k)):load())),after=JSON.parse(JSON.stringify(before));
   fn(after);mem[k]=after;localSet(k,after);
   if(CLOUD&&CLOUD.user)pushDiff(k,before,after);
 }
@@ -338,7 +338,7 @@ function laporan(){
   const it=[];
   ex.forEach((x,i)=>it.push({d:x[0],o:i,h:`<tr><td>${esc(tgl(x[0]))}</td><td>${esc(x[1])}</td><td class="n">${x[2]?nf(x[2]):''}</td><td class="n">${x[3]?nf(x[3]):''}</td><td>${esc(x[4])}</td><td></td></tr>`}));
   m.forEach((x,i)=>it.push({d:x.t,o:1000+i,h:`<tr class="man"><td>${esc(tgl(x.t))}</td><td>${esc(x.n)}</td><td class="n">${x.k?nf(x.k):''}</td><td class="n">${x.d?nf(x.d):''}</td><td>${esc(x.ket)}</td><td><button class="del" data-i="${i}" aria-label="Hapus">✕</button></td></tr>`}));
-  um.forEach((x,i)=>it.push({d:x.t,o:2000+i,h:`<tr class="auto"><td>${esc(tgl(x.t))}</td><td>Uang makan ${esc(x.n==='Lainnya'?'':x.n)}${x.ket?' ('+esc(x.ket)+')':''}</td><td class="n">${nf(x.j)}</td><td class="n"></td><td>Otomatis dari periode ${P-1}</td><td></td></tr>`}));
+  um.forEach((x,i)=>it.push({d:x.t,o:2000+i,h:`<tr class="auto"><td>${esc(tgl(x.t))}</td><td>Uang makan ${esc(x.n==='Lainnya'?'':x.n)}${x.ket?' ('+esc(x.ket)+')':''}</td><td class="n">${nf(x.j)}</td><td class="n"></td><td>Otomatis dari periode ${P-1}</td><td><button class="delum" data-id="${esc(x.id)}" aria-label="Hapus uang makan">✕</button></td></tr>`}));
   const bodyRows=sortDesc(it);
   $('#t-laporan').innerHTML=`<div class="grid">
    <div class="card"><div class="k">Total kredit</div><div class="v">${rp(tk)}</div><div class="h">Mengurangi saldo rek</div></div>
@@ -358,6 +358,11 @@ function laporan(){
     render();
   };
   document.querySelectorAll('#t-laporan .del').forEach(b=>b.onclick=()=>{change(o=>o.lap.splice(+b.dataset.i,1));render()});
+  document.querySelectorAll('#t-laporan .delum').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.id,x=prevUm().find(e=>e.id===id);
+    if(typeof confirm==='function'&&!confirm('Hapus uang makan'+(x?' '+x.n+' '+rp(x.j):'')+'? Uangnya kembali ke saldo rekening.'))return;
+    change(o=>{o.um=o.um.filter(e=>e.id!==id)},K+'-'+(P-1));render();
+  });
 }
 
 let showMati=false;
